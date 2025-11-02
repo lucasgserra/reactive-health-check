@@ -4,8 +4,8 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.lucasserra.reactive_health_check.service.HealthCheckService;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
 
 import java.time.Duration;
 import java.util.List;
@@ -18,16 +18,13 @@ public class HealthCheckCache {
     private final ConcurrentMap<Object, Object> cacheUp;
     private final ConcurrentMap<Object, Object> cacheBroken;
 
-    @Value("${siterelic.update.cache}")
-    private Integer cacheDelay;
-
     @Value("${siterelic.ttl.cache}")
     private Integer cacheTTL;
 
     public HealthCheckCache(HealthCheckService service) {
         this.service = service;
 
-        int ttl = cacheTTL!=null?cacheTTL:1;
+        int ttl = cacheTTL != null ? cacheTTL : 1;
 
         this.cacheUp = Caffeine.newBuilder()
                 .expireAfterWrite(Duration.ofMinutes(ttl))
@@ -39,39 +36,28 @@ public class HealthCheckCache {
                 .build()
                 .asMap();
     }
-    private void startPeriodicCollection() {
-
-        int delay = cacheDelay!=null?cacheDelay:1;
-
-        Flux.interval(Duration.ZERO, Duration.ofMinutes(delay))
-                .flatMap(tick -> service.checkAllSites())
-                .collectList()
-                .doOnNext(list -> cacheUp.put("allSites", list))
-                .subscribe();
-
-        Flux.interval(Duration.ZERO, Duration.ofMinutes(delay))
-                .flatMap(tick -> service.getBrokenLinks())
-                .collectList()
-                .doOnNext(list -> cacheBroken.put("brokenLinks", list))
-                .subscribe();
-    }
 
     @PostConstruct
     private void initCache() {
         service.checkAllSites()
+                .onErrorContinue((e, o) -> System.err.println("erro checkAllSites inicial: " + e))
                 .collectList()
-                .doOnNext(list -> cacheUp.put("allSites", list))
-                .block();
+                .subscribe(list -> cacheUp.put("allSites", list));
+
         service.getBrokenLinks()
+                .onErrorContinue((e, o) -> System.err.println("erro getBrokenLinks inicial: " + e))
                 .collectList()
-                .doOnNext(list -> cacheBroken.put("brokenLinks", list))
-                .block();
-        startPeriodicCollection();
+                .subscribe(list -> cacheBroken.put("brokenLinks", list));
+        //startPeriodicCollection();
+    }
+
+    @Scheduled(fixedRate = 60000)
+    void scheduled() {
+        initCache();
     }
 
     @SuppressWarnings("unchecked")
     public <T> List<T> getCachedUp() {
-        System.out.println(cacheUp.get("allSites"));
         return (List<T>) cacheUp.getOrDefault("allSites", List.of());
     }
 

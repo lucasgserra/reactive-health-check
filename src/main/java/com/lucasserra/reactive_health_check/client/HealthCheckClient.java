@@ -15,6 +15,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
+import java.util.Date;
+
 @Component
 public class HealthCheckClient {
 
@@ -52,6 +55,7 @@ public class HealthCheckClient {
                     HealthCheckUpModel producer = new HealthCheckUpModel();
                     producer.setResponse(siterelic.getData().getReasonPhrase());
                     producer.setStatusCode(siterelic.getData().getStatusCode());
+                    producer.setDateTime(Date.from(Instant.now()).toString());;
                     producer.setUrl(url);
                     return producer;
                 })
@@ -80,6 +84,7 @@ public class HealthCheckClient {
                         .map(siterelic -> {
                             HealthCheckBrokenModel producer = new HealthCheckBrokenModel();
                             producer.setBrokenLinks(siterelic.getData());
+                            producer.setDateTime(Date.from(Instant.now()).toString());
                             return producer;
                         })
                         .onErrorResume(e -> {

@@ -9,6 +9,7 @@ import java.util.List;
 @Setter
 public class HealthCheckBrokenModel {
 
+    String dateTime;
     List<SiterelicDataBrokenModel> brokenLinks;
 
 }

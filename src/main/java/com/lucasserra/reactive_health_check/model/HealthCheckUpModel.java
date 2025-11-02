@@ -7,6 +7,7 @@ import lombok.Setter;
 @Setter
 public class HealthCheckUpModel {
 
+    String dateTime;
     String url;
     Integer statusCode;
     String response;
