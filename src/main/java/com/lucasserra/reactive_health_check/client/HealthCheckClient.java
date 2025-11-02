@@ -45,6 +45,9 @@ public class HealthCheckClient {
                 .bodyValue(new SiterelicBodyParser(url))
                 .retrieve()
                 .bodyToMono(SiterelicModel.class)
+                .doOnNext(n -> {
+                    System.out.println("iniciando coleta para a url " + n.getMeta().getUrl());
+                })
                 .map(siterelic -> {
                     HealthCheckUpModel producer = new HealthCheckUpModel();
                     producer.setResponse(siterelic.getData().getReasonPhrase());
@@ -66,8 +69,8 @@ public class HealthCheckClient {
 
     public Flux<HealthCheckBrokenModel> verifyBrokenLinks() {
         return getAllHealthUrls()
-                .filter(s -> s.getStatusCode() != null &&
-                        s.getStatusCode().toString().startsWith("2"))
+                .filter(s -> s.getStatusCode()
+                        != null && s.getStatusCode() >= 200 && s.getStatusCode() < 300)
                 .flatMap(s -> webClient.post()
                         .uri("/brokenlink")
                         .header("x-api-key", api_key)

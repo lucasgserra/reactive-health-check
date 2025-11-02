@@ -1,5 +1,6 @@
 package com.lucasserra.reactive_health_check.controller;
 
+import com.lucasserra.reactive_health_check.config.HealthCheckCache;
 import com.lucasserra.reactive_health_check.model.HealthCheckBrokenModel;
 import com.lucasserra.reactive_health_check.model.HealthCheckUpModel;
 import com.lucasserra.reactive_health_check.service.HealthCheckService;
@@ -12,18 +13,18 @@ import reactor.core.publisher.Flux;
 @RequestMapping("/health")
 public class HealthCheckController {
 
-    private final HealthCheckService service;
+    private final HealthCheckCache cache;
 
-    public HealthCheckController(HealthCheckService service) {
-        this.service = service;
+    public HealthCheckController(HealthCheckCache cache) {
+        this.cache = cache;
     }
 
     @GetMapping("")
     public Flux<HealthCheckUpModel> getAllHealth() {
-        return service.checkAllSites();
+        return Flux.fromIterable(cache.getCachedUp());
     }
     @GetMapping("links")
     public Flux<HealthCheckBrokenModel> getBrokenLink() {
-        return service.getBrokenLinks();
+        return Flux.fromIterable(cache.getCachedBroken());
     }
 }
