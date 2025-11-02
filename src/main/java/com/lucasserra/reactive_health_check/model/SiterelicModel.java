@@ -15,6 +15,7 @@ public class SiterelicModel {
     Integer apiCode;
     String message;
     SiterelicMetaModel meta;
+    SiterelicDataModel data;
 
 
 }
