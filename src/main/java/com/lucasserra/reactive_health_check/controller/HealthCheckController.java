@@ -1,7 +1,7 @@
 package com.lucasserra.reactive_health_check.controller;
 
-import com.lucasserra.reactive_health_check.model.HealthCheckProducerModel;
-import com.lucasserra.reactive_health_check.model.SiterelicModel;
+import com.lucasserra.reactive_health_check.model.HealthCheckBrokenModel;
+import com.lucasserra.reactive_health_check.model.HealthCheckUpModel;
 import com.lucasserra.reactive_health_check.service.HealthCheckService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,8 +19,11 @@ public class HealthCheckController {
     }
 
     @GetMapping("")
-    public Flux<HealthCheckProducerModel> getAllHealth() {
+    public Flux<HealthCheckUpModel> getAllHealth() {
         return service.checkAllSites();
     }
-
+    @GetMapping("links")
+    public Flux<HealthCheckBrokenModel> getBrokenLink() {
+        return service.getBrokenLinks();
+    }
 }

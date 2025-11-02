@@ -1,9 +1,9 @@
 package com.lucasserra.reactive_health_check.client;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lucasserra.reactive_health_check.config.HealthCheckUrlConfig;
-import com.lucasserra.reactive_health_check.model.HealthCheckProducerModel;
+import com.lucasserra.reactive_health_check.model.HealthCheckBrokenModel;
+import com.lucasserra.reactive_health_check.model.HealthCheckUpModel;
+import com.lucasserra.reactive_health_check.model.SiterelicBrokenModel;
 import com.lucasserra.reactive_health_check.model.SiterelicModel;
 import lombok.Data;
 import lombok.Getter;
@@ -37,7 +37,7 @@ public class HealthCheckClient {
         this.urls = urls;
     }
 
-    public Mono<HealthCheckProducerModel> getHealthUrls(String url) {
+    public Mono<HealthCheckUpModel> getHealthUrls(String url) {
         return webClient.post()
                 .uri("/up")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -46,7 +46,7 @@ public class HealthCheckClient {
                 .retrieve()
                 .bodyToMono(SiterelicModel.class)
                 .map(siterelic -> {
-                    HealthCheckProducerModel producer = new HealthCheckProducerModel();
+                    HealthCheckUpModel producer = new HealthCheckUpModel();
                     producer.setResponse(siterelic.getData().getReasonPhrase());
                     producer.setStatusCode(siterelic.getData().getStatusCode());
                     producer.setUrl(url);
@@ -54,13 +54,35 @@ public class HealthCheckClient {
                 })
                 .onErrorResume(e -> {
                     System.err.println("um erro ocorreu durante a coleta healthcheck da url " + url);
-                    System.err.println("causa: " + e + api_key);
+                    System.err.println("causa: " + e);
                     return Mono.empty();
                 });
     }
 
-    public Flux<HealthCheckProducerModel> getAllHealthUrls() {
+    public Flux<HealthCheckUpModel> getAllHealthUrls() {
         return Flux.fromIterable(urls.getUrls())
                 .flatMap(this::getHealthUrls);
+    }
+
+    public Flux<HealthCheckBrokenModel> verifyBrokenLinks() {
+        return getAllHealthUrls()
+                .filter(s -> s.getStatusCode() != null &&
+                        s.getStatusCode().toString().startsWith("2"))
+                .flatMap(s -> webClient.post()
+                        .uri("/brokenlink")
+                        .header("x-api-key", api_key)
+                        .bodyValue(new SiterelicBodyParser(s.getUrl()))
+                        .retrieve()
+                        .bodyToMono(SiterelicBrokenModel.class)
+                        .map(siterelic -> {
+                            HealthCheckBrokenModel producer = new HealthCheckBrokenModel();
+                            producer.setBrokenLinks(siterelic.getData());
+                            return producer;
+                        })
+                        .onErrorResume(e -> {
+                            System.err.println("um erro ocorreu durante a coleta de brokenlinks da url " + s.getUrl());
+                            System.err.println("causa: " + e);
+                            return Mono.empty();
+                        }));
     }
 }

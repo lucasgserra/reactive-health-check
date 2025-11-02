@@ -1,8 +1,9 @@
 package com.lucasserra.reactive_health_check.service;
 
 import com.lucasserra.reactive_health_check.client.HealthCheckClient;
-import com.lucasserra.reactive_health_check.model.HealthCheckProducerModel;
-import com.lucasserra.reactive_health_check.model.SiterelicModel;
+import com.lucasserra.reactive_health_check.model.HealthCheckBrokenModel;
+import com.lucasserra.reactive_health_check.model.HealthCheckResponseModel;
+import com.lucasserra.reactive_health_check.model.HealthCheckUpModel;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -15,8 +16,11 @@ public class HealthCheckService {
         this.client = client;
     }
 
-    public Flux<HealthCheckProducerModel> checkAllSites() {
-        return client.getAllHealthUrls();
+    public Flux<HealthCheckBrokenModel> getBrokenLinks() {
+        return client.verifyBrokenLinks();
     }
 
+    public Flux<HealthCheckUpModel> checkAllSites() {
+        return client.getAllHealthUrls();
+    }
 }

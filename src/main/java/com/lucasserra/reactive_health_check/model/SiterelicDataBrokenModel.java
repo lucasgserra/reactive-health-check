@@ -5,10 +5,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class HealthCheckProducerModel {
+public class SiterelicDataBrokenModel {
 
-    String url;
-    Integer statusCode;
-    String response;
+    String link;
+    Integer status;
 
 }
